@@ -5,7 +5,7 @@ Db 中间件
 ## 安装
 
 ```
-composer require "SolitudeSword/dbMysql"
+composer require "dreamcat/dbmysql"
 ```
 
 ## 使用

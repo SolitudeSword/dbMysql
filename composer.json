@@ -1,10 +1,10 @@
 {
-    "name": "SolitudeSword/dbMysql",
+    "name": "dreamcat/dbmysql",
     "description": "一个简单的DB操作类",
     "keywords": [
         "phpdoc"
     ],
-    "homepage": "https://github.com/SolitudeSword/dbMysql",
+    "homepage": "https://github.com/SolitudeSword/dbmysql",
     "type": "library",
     "authors": [
         {

@@ -1,0 +1,33 @@
+{
+    "name": "dreamcat/dbMysql",
+    "description": "一个简单的DB操作类",
+    "keywords": [
+        "phpdoc"
+    ],
+    "homepage": "https://github.com/SolitudeSword/dbMysql",
+    "type": "library",
+    "authors": [
+        {
+            "name": "SolitudeSword",
+            "email": "SolitudeSword@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "ext-mysqli": "*",
+        "psr/log": "^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "6.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dreamcat\\Components\\Db\\Mysql\\": "src/main"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Dreamcat\\Components\\Db\\Mysql\\": "src/test"
+        }
+    }
+}

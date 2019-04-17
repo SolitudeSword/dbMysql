@@ -144,7 +144,7 @@ class DbPrepare
     /**
      * select
      * 执行select类SQL
-     * @return false|dbResult 成功返回结果集，失败或者非select类sql返回false
+     * @return false|DbResult 成功返回结果集，失败或者非select类sql返回false
      * @access public
      */
     public function select()
@@ -152,7 +152,7 @@ class DbPrepare
         if ($this->preResult->execute()) {
             /** @noinspection PhpAssignmentInConditionInspection */
             if ($result = $this->preResult->get_result()) {
-                return new dbResult($result);
+                return new DbResult($result);
             } else {
                 # 取不到结果集对象，即非select语句
                 return false;

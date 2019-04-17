@@ -121,14 +121,14 @@ class DbMysql
      * 预处理一个SQL
      * @param string $sql 要预处理的sql
      * @param bool $recordError 是否记录执行错误
-     * @return dbPrepare|false 失败返回 false，成功返回 DbPrepare
+     * @return DbPrepare|false 失败返回 false，成功返回 DbPrepare
      * @access public
      */
     public function prepare($sql, $recordError = true)
     {
         $ret = $this->mysqli->prepare($sql);
         if ($ret) {
-            return new dbPrepare($ret, $sql, $recordError ? $this->logRecord : null);
+            return new DbPrepare($ret, $sql, $recordError ? $this->logRecord : null);
         } else {
             if ($recordError && $this->logRecord) {
                 $this->logRecord->error("SQL执行错误", [
@@ -145,7 +145,7 @@ class DbMysql
      * 执行一个查询SQL
      * @param string $sql SQL，必须使用预处理类语句
      * @param array $values 要绑定的值
-     * @return false|dbResult 成功返回结果集，失败或者非select类sql返回false
+     * @return false|DbResult 成功返回结果集，失败或者非select类sql返回false
      * @access public
      */
     public function queryResult($sql, array $values = [])

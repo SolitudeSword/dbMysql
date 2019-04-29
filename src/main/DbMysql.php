@@ -45,7 +45,7 @@ class DbMysql
      * @param string $user 数据库用户名
      * @param string $pwd 数据库密码
      * @param string $db 数据库名
-     * @param LoggerInterface $logRecord
+     * @param LoggerInterface $logRecord 日志记录器
      * @param string $charset 字符集
      * @throws DbError
      */
@@ -160,8 +160,8 @@ class DbMysql
     /**
      * escape
      * 字符串转义
-     * @param string $str
-     * @return string
+     * @param string $str 要转义的字符串
+     * @return string 转义后的字符串
      * @access public
      */
     public function escape($str): string

@@ -35,7 +35,7 @@ class DbPrepare
      * 构造函数
      * @param mysqli_stmt $preResult 代表一个prepared语句的对象
      * @param string $sql 创建时使用的SQL
-     * @param LoggerInterface $logRecord
+     * @param LoggerInterface $logRecord 日志记录器
      */
     public function __construct(mysqli_stmt $preResult, string $sql, LoggerInterface $logRecord = null)
     {
@@ -77,7 +77,7 @@ class DbPrepare
     /**
      * bindValue
      * 把值绑定到参数
-     * @param array $args 参数列表，元素如果是数组，第一个值BIND_TYPE_*常量，表示数据类型，第二个值为数据，如果不是数组，则值为数据
+     * @args array $args 参数列表，元素如果是数组，第一个值BIND_TYPE_*常量，表示数据类型，第二个值为数据，如果不是数组，则值为数据
      * @return bool 是否成功
      * @access public
      * @note 非引用绑定

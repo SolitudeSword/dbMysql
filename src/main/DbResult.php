@@ -204,8 +204,8 @@ class DbResult implements \Iterator, \ArrayAccess, \Countable
     /**
      * offsetSet
      * 设置一个偏移位置的值，此函数不实现
-     * @param int $offset
-     * @param mixed $value
+     * @param int $offset 偏移量
+     * @param mixed $value 要设定的值
      * @return void
      * @access public
      */
@@ -216,7 +216,7 @@ class DbResult implements \Iterator, \ArrayAccess, \Countable
     /**
      * offsetUnset
      * 复位一个偏移位置的值，此函数不实现
-     * @param int $offset
+     * @param int $offset 偏移量
      * @return void
      * @access public
      */

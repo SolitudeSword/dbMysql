@@ -78,8 +78,7 @@ class DbMysql
      * @return string
      * @access
      */
-    public function getDbName(): string
-    {
+    public function getDbName(): string {
         return $this->dbName;
     }
 
@@ -89,8 +88,7 @@ class DbMysql
      * @return int 上次错误码
      * @access public
      */
-    public function errorCode(): int
-    {
+    public function errorCode(): int {
         return intval($this->mysqli->errno);
     }
 
@@ -100,8 +98,7 @@ class DbMysql
      * @return string 错误信息
      * @access public
      */
-    public function lastError(): string
-    {
+    public function lastError(): string {
         return $this->mysqli->error;
     }
 
@@ -111,8 +108,7 @@ class DbMysql
      * @return string 最后插入行的ID
      * @access public
      */
-    public function lastInsertId(): string
-    {
+    public function lastInsertId(): string {
         return strval($this->mysqli->insert_id);
     }
 
@@ -124,8 +120,7 @@ class DbMysql
      * @return DbPrepare|false 失败返回 false，成功返回 DbPrepare
      * @access public
      */
-    public function prepare($sql, $recordError = true)
-    {
+    public function prepare($sql, $recordError = true) {
         $ret = $this->mysqli->prepare($sql);
         if ($ret) {
             return new DbPrepare($ret, $sql, $recordError ? $this->logRecord : null);
@@ -148,8 +143,7 @@ class DbMysql
      * @return false|DbResult 成功返回结果集，失败或者非select类sql返回false
      * @access public
      */
-    public function queryResult($sql, array $values = [])
-    {
+    public function queryResult($sql, array $values = []) {
         $stat = $this->prepare($sql);
         if (!$stat) {
             return false;
@@ -164,8 +158,7 @@ class DbMysql
      * @return string 转义后的字符串
      * @access public
      */
-    public function escape($str): string
-    {
+    public function escape($str): string {
         return $this->mysqli->real_escape_string($str);
     }
 
@@ -175,8 +168,7 @@ class DbMysql
      * @return bool 是否在事务中
      * @access public
      */
-    public function isInTrannsaction(): bool
-    {
+    public function isInTrannsaction(): bool {
         return $this->inTransaction;
     }
 
@@ -187,8 +179,7 @@ class DbMysql
      * @note 如果之前已经在事务中，开启返回失败
      * @access public
      */
-    public function beginTransaction(): bool
-    {
+    public function beginTransaction(): bool {
         if (!$this->inTransaction) {
             $this->inTransaction = true;
             return $this->mysqli->begin_transaction();
@@ -203,8 +194,7 @@ class DbMysql
      * @return bool 是否成功提交事务
      * @access public
      */
-    public function commit(): bool
-    {
+    public function commit(): bool {
         if ($this->inTransaction) {
             $this->mysqli->commit();
             $this->inTransaction = false;
@@ -220,8 +210,7 @@ class DbMysql
      * @return void
      * @access public
      */
-    public function rollBack(): void
-    {
+    public function rollBack(): void {
         $this->mysqli->rollback();
         $this->inTransaction = false;
     }
@@ -232,8 +221,7 @@ class DbMysql
      * @return int 影响条数
      * @access public
      */
-    public function getAffectedRows(): int
-    {
+    public function getAffectedRows(): int {
         return $this->mysqli->affected_rows;
     }
 
@@ -353,6 +341,73 @@ class DbMysql
         }
         return $result ? true : false;
     }
+
+    /**
+     * insert
+     * 插入数据
+     * @param string $tableName 要插入的表名
+     * @param array $datas 数组，键是字段名，值是数据
+     * @param bool $batch 是否批量
+     * @param bool $replace 是否使用替换
+     * @param bool $insIgnore 是否在insert时忽略错误
+     * @param string $dbName 使用的数据库名，默认为当前库
+     * @param string $onDuplicate 插入出现唯一键冲突时的sql，会附在on duplicate key update后面
+     * @return false|int 批量返回影响行数，否则返回lastinsertid，失败都是返回false
+     * @access public
+     */
+    public function insert($tableName, array $datas, $batch = false, $replace = false, $insIgnore = false, $dbName = '', $onDuplicate = "") {
+        if (!$datas) {
+            return 0;
+        }
+        if ($batch) {
+            $datas = array_values($datas);
+        } else {
+            $datas = [$datas];
+        }
+        $fields = array_keys($datas[0]);
+        if (!$fields) {
+            return 0;
+        }
+        $values = [];
+        foreach ($datas as $rowData) {
+            if (!$rowData) {
+                continue;
+            }
+            $data = [];
+            foreach ($fields as $field) {
+                if (isset($rowData[$field])) {
+                    $data[] = '\'' . $this->escape($rowData[$field]) . '\'';
+                } else {
+                    $data[] = 'null';
+                }
+            }
+            $values[] = '(' . implode(', ', $data) . ')';
+        }
+        if (!$values) {
+            return 0;
+        }
+        $fields = '`' . implode('`, `', $fields) . '`';
+        if ($dbName) {
+            $dbName = "`{$dbName}`.";
+        }
+        $op = $replace ? 'replace' : 'insert';
+        if (!$replace && $insIgnore) {
+            $op .= ' ignore';
+        }
+        $sql = "{$op} into {$dbName}`{$tableName}` ({$fields}) values " . implode(', ', $values);
+        if (!$replace && $onDuplicate) {
+            $sql .= " on duplicate key update {$onDuplicate}";
+        }
+        if ($this->mysqli->query($sql)) {
+            return $batch ? $this->getAffectedRows() : $this->lastInsertId();
+        } else {
+            if ($this->logRecord) {
+                $this->logRecord->error("SQL[{$sql}]执行错误(" . $this->lastError() . ')');
+            }
+            return false;
+        }
+    }
+
 }
 
 # end of file

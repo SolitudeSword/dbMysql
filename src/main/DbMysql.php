@@ -47,6 +47,7 @@ class DbMysql
      * @param string $db 数据库名
      * @param LoggerInterface $logRecord 日志记录器
      * @param string $charset 字符集
+     * @param int $port
      * @throws DbError
      */
     public function __construct(
@@ -55,18 +56,21 @@ class DbMysql
         string $pwd,
         string $db,
         LoggerInterface $logRecord = null,
-        $charset = "utf-8"
+        $charset = "utf-8",
+        int $port = 3306
     ) {
         $this->logRecord = $logRecord;
-        $this->mysqli = new mysqli($host, $user, $pwd, $db);
+        $this->mysqli = new mysqli($host, $user, $pwd, $db, $port);
         if ($this->mysqli->connect_error && $this->logRecord) {
             $this->logRecord->error("DB配置连接失败", [
+                "error" => $this->mysqli->connect_error,
                 "user" => $user,
                 "pwd" => $pwd,
                 "host" => $host,
                 "db" => $db,
+                "port" => $port,
             ]);
-            throw new DbError("数据库连接失败");
+            throw new DbError("数据库连接失败: {$this->mysqli->connect_error}");
         }
         $this->mysqli->set_charset($charset);
         $this->dbName = $db;
@@ -95,25 +99,20 @@ class DbMysql
     }
 
     /**
-     * lastError
-     * 获取上次的错误信息，无信息返回空字符串
-     * @return string 错误信息
+     * queryResult
+     * 执行一个查询SQL
+     * @param string $sql SQL，必须使用预处理类语句
+     * @param array $values 要绑定的值
+     * @return false|DbResult 成功返回结果集，失败或者非select类sql返回false
      * @access public
      */
-    public function lastError(): string
+    public function queryResult($sql, array $values = [])
     {
-        return $this->mysqli->error;
-    }
-
-    /**
-     * lastInsertId
-     * 返回最后插入行的ID
-     * @return string 最后插入行的ID
-     * @access public
-     */
-    public function lastInsertId(): string
-    {
-        return strval($this->mysqli->insert_id);
+        $stat = $this->prepare($sql);
+        if (!$stat) {
+            return false;
+        }
+        return $stat->bindValueAry($values) ? $stat->select() : false;
     }
 
     /**
@@ -141,32 +140,14 @@ class DbMysql
     }
 
     /**
-     * queryResult
-     * 执行一个查询SQL
-     * @param string $sql SQL，必须使用预处理类语句
-     * @param array $values 要绑定的值
-     * @return false|DbResult 成功返回结果集，失败或者非select类sql返回false
+     * lastError
+     * 获取上次的错误信息，无信息返回空字符串
+     * @return string 错误信息
      * @access public
      */
-    public function queryResult($sql, array $values = [])
+    public function lastError(): string
     {
-        $stat = $this->prepare($sql);
-        if (!$stat) {
-            return false;
-        }
-        return $stat->bindValueAry($values) ? $stat->select() : false;
-    }
-
-    /**
-     * escape
-     * 字符串转义
-     * @param string $str 要转义的字符串
-     * @return string 转义后的字符串
-     * @access public
-     */
-    public function escape($str): string
-    {
-        return $this->mysqli->real_escape_string($str);
+        return $this->mysqli->error;
     }
 
     /**
@@ -224,17 +205,6 @@ class DbMysql
     {
         $this->mysqli->rollback();
         $this->inTransaction = false;
-    }
-
-    /**
-     * getAffectedRows
-     * 获得上条sql影响条数
-     * @return int 影响条数
-     * @access public
-     */
-    public function getAffectedRows(): int
-    {
-        return $this->mysqli->affected_rows;
     }
 
     /**
@@ -355,6 +325,18 @@ class DbMysql
     }
 
     /**
+     * escape
+     * 字符串转义
+     * @param string $str 要转义的字符串
+     * @return string 转义后的字符串
+     * @access public
+     */
+    public function escape($str): string
+    {
+        return $this->mysqli->real_escape_string($str);
+    }
+
+    /**
      * insert
      * 插入数据
      * @param string $tableName 要插入的表名
@@ -419,6 +401,28 @@ class DbMysql
             }
             return false;
         }
+    }
+
+    /**
+     * getAffectedRows
+     * 获得上条sql影响条数
+     * @return int 影响条数
+     * @access public
+     */
+    public function getAffectedRows(): int
+    {
+        return $this->mysqli->affected_rows;
+    }
+
+    /**
+     * lastInsertId
+     * 返回最后插入行的ID
+     * @return string 最后插入行的ID
+     * @access public
+     */
+    public function lastInsertId(): string
+    {
+        return strval($this->mysqli->insert_id);
     }
 
 }

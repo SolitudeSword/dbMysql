@@ -47,7 +47,7 @@ class DbMysql
      * @param string $db 数据库名
      * @param LoggerInterface $logRecord 日志记录器
      * @param string $charset 字符集
-     * @param int $port
+     * @param int $port 端口号
      * @throws DbError
      */
     public function __construct(

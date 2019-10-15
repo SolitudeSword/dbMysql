@@ -2,13 +2,14 @@
     "name": "dreamcat/dbmysql",
     "description": "一个简单的DB操作类",
     "keywords": [
-        "phpdoc"
+        "db",
+        "mysql",
+        "sql"
     ],
-    "homepage": "https://github.com/SolitudeSword/dbmysql",
     "type": "library",
     "authors": [
         {
-            "name": "SolitudeSword",
+            "name": "vijay",
             "email": "SolitudeSword@gmail.com"
         }
     ],

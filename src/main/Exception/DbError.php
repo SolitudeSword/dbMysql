@@ -3,10 +3,8 @@
 namespace Dreamcat\Components\Db\Mysql\Exception;
 
 /**
- * Class DbError
- * @package Dreamcat\Components\Db\Mysql\Exception
  * Db 异常
- * @author 王锦
+ * @author vijay
  */
 class DbError extends Error
 {

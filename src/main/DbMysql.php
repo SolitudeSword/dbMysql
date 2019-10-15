@@ -6,36 +6,31 @@ use Dreamcat\Components\Db\Mysql\Enum\DataTypes;
 use Dreamcat\Components\Db\Mysql\Exception\DbError;
 use mysqli;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
- * Class DbMysql
- * @package Dreamcat\Components\Db\Mysql\Enum
  * mysql数据库连接，使用mysqli方法
- * @author SolitudeSword
+ * @author vijay
  */
 class DbMysql
 {
     /**
      * @var mysqli $mysqli 连接对象
-     * @access private
      */
     private $mysqli;
 
     /**
      * @var bool $inTransaction 当前db是否在事务中
-     * @access private
      */
     private $inTransaction = false;
 
     /**
      * @var string $dbName 当前db名
-     * @access private
      */
     private $dbName;
 
     /**
      * @var LoggerInterface $logRecord 日志记录对象
-     * @access private
      */
     private $logRecord;
 
@@ -45,7 +40,6 @@ class DbMysql
      * @param string $user 数据库用户名
      * @param string $pwd 数据库密码
      * @param string $db 数据库名
-     * @param LoggerInterface $logRecord 日志记录器
      * @param string $charset 字符集
      * @param int $port 端口号
      * @throws DbError
@@ -55,25 +49,38 @@ class DbMysql
         string $user,
         string $pwd,
         string $db,
-        LoggerInterface $logRecord = null,
         $charset = "utf-8",
         int $port = 3306
     ) {
-        $this->logRecord = $logRecord;
+        $this->logRecord = new NullLogger();
         $this->mysqli = new mysqli($host, $user, $pwd, $db, $port);
-        if ($this->mysqli->connect_error && $this->logRecord) {
-            $this->logRecord->error("DB配置连接失败", [
-                "error" => $this->mysqli->connect_error,
-                "user" => $user,
-                "pwd" => $pwd,
-                "host" => $host,
-                "db" => $db,
-                "port" => $port,
-            ]);
+        if ($this->mysqli->connect_error) {
+            $this->logRecord->error(
+                "DB配置连接失败",
+                [
+                    "error" => $this->mysqli->connect_error,
+                    "user" => $user,
+                    "pwd" => $pwd,
+                    "host" => $host,
+                    "db" => $db,
+                    "port" => $port,
+                ]
+            );
             throw new DbError("数据库连接失败: {$this->mysqli->connect_error}");
         }
         $this->mysqli->set_charset($charset);
         $this->dbName = $db;
+    }
+
+    /**
+     * 设置日志记录器
+     * @param LoggerInterface $logRecord 日志记录器
+     * @return DbMysql
+     */
+    public function setLogger(LoggerInterface $logRecord): DbMysql
+    {
+        $this->logRecord = $logRecord;
+        return $this;
     }
 
     /**
@@ -130,10 +137,13 @@ class DbMysql
             return new DbPrepare($ret, $sql, $recordError ? $this->logRecord : null);
         } else {
             if ($recordError && $this->logRecord) {
-                $this->logRecord->error("SQL执行错误", [
-                    "sql" => $sql,
-                    "error" => $this->lastError(),
-                ]);
+                $this->logRecord->error(
+                    "SQL执行错误",
+                    [
+                        "sql" => $sql,
+                        "error" => $this->lastError(),
+                    ]
+                );
             }
             return false;
         }
@@ -316,10 +326,13 @@ class DbMysql
         $sql .= ") engine={$engine} default charset={$charset}";
         $result = $this->mysqli->query($sql);
         if (!$result && $this->logRecord) {
-            $this->logRecord->error("SQL执行错误", [
-                "sql" => $sql,
-                "error" => $this->lastError(),
-            ]);
+            $this->logRecord->error(
+                "SQL执行错误",
+                [
+                    "sql" => $sql,
+                    "error" => $this->lastError(),
+                ]
+            );
         }
         return $result ? true : false;
     }
@@ -334,73 +347,6 @@ class DbMysql
     public function escape($str): string
     {
         return $this->mysqli->real_escape_string($str);
-    }
-
-    /**
-     * insert
-     * 插入数据
-     * @param string $tableName 要插入的表名
-     * @param array $datas 数组，键是字段名，值是数据
-     * @param bool $batch 是否批量
-     * @param bool $replace 是否使用替换
-     * @param bool $insIgnore 是否在insert时忽略错误
-     * @param string $dbName 使用的数据库名，默认为当前库
-     * @param string $onDuplicate 插入出现唯一键冲突时的sql，会附在on duplicate key update后面
-     * @return false|int 批量返回影响行数，否则返回lastinsertid，失败都是返回false
-     * @access public
-     */
-    public function insert($tableName, array $datas, $batch = false, $replace = false, $insIgnore = false, $dbName = '', $onDuplicate = "")
-    {
-        if (!$datas) {
-            return 0;
-        }
-        if ($batch) {
-            $datas = array_values($datas);
-        } else {
-            $datas = [$datas];
-        }
-        $fields = array_keys($datas[0]);
-        if (!$fields) {
-            return 0;
-        }
-        $values = [];
-        foreach ($datas as $rowData) {
-            if (!$rowData) {
-                continue;
-            }
-            $data = [];
-            foreach ($fields as $field) {
-                if (isset($rowData[$field])) {
-                    $data[] = '\'' . $this->escape($rowData[$field]) . '\'';
-                } else {
-                    $data[] = 'null';
-                }
-            }
-            $values[] = '(' . implode(', ', $data) . ')';
-        }
-        if (!$values) {
-            return 0;
-        }
-        $fields = '`' . implode('`, `', $fields) . '`';
-        if ($dbName) {
-            $dbName = "`{$dbName}`.";
-        }
-        $op = $replace ? 'replace' : 'insert';
-        if (!$replace && $insIgnore) {
-            $op .= ' ignore';
-        }
-        $sql = "{$op} into {$dbName}`{$tableName}` ({$fields}) values " . implode(', ', $values);
-        if (!$replace && $onDuplicate) {
-            $sql .= " on duplicate key update {$onDuplicate}";
-        }
-        if ($this->mysqli->query($sql)) {
-            return $batch ? $this->getAffectedRows() : $this->lastInsertId();
-        } else {
-            if ($this->logRecord) {
-                $this->logRecord->error("SQL[{$sql}]执行错误(" . $this->lastError() . ')');
-            }
-            return false;
-        }
     }
 
     /**
@@ -424,7 +370,6 @@ class DbMysql
     {
         return strval($this->mysqli->insert_id);
     }
-
 }
 
 # end of file

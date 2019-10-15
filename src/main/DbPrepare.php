@@ -7,10 +7,8 @@ use mysqli_stmt;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class DbPrepare
- * @package Dreamcat\Components\Db\Mysql
  * 代表一个prepared语句
- * @author SolitudeSword
+ * @author vijay
  */
 class DbPrepare
 {

@@ -5,10 +5,8 @@ namespace Dreamcat\Components\Db\Mysql;
 use mysqli_result;
 
 /**
- * Class DbResult
- * @package Dreamcat\Components\Db\Mysql
  * db结果集
- * @author SolitudeSword
+ * @author vijay
  */
 class DbResult implements \Iterator, \ArrayAccess, \Countable
 {
